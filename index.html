@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergências Pulmonares - Simulação & Assistência de Enfermagem</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Arquivo CSS Externo -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-slate-900 text-slate-100 flex flex-col min-h-screen">
+
+    <!-- Header / Navbar -->
+    <header class="bg-slate-800/90 border-b border-slate-700/80 sticky top-0 z-40 backdrop-blur-md px-4 lg:px-8 py-3 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-cyan-500/20">
+                    <i class="fa-solid fa-lungs text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">
+                       PulmoCare
+                    </h1>
+                    <p class="text-xs text-slate-400 font-medium">Simulador de Assistência de Enfermagem em Emergências Pulmonares</p>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="flex items-center gap-4 sm:gap-6 bg-slate-900/80 px-4 py-1.5 rounded-full border border-slate-700/60 text-xs sm:text-sm">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-star text-amber-400"></i>
+                    <span class="text-slate-400 hidden sm:inline">Pontos:</span>
+                    <span id="stat-score" class="font-bold text-amber-300 font-mono">0</span>
+                </div>
+                <div class="h-4 w-px bg-slate-700"></div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-fire text-rose-400"></i>
+                    <span class="text-slate-400 hidden sm:inline">Sequência:</span>
+                    <span id="stat-streak" class="font-bold text-rose-300 font-mono">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-slate-800/40 border-b border-slate-700/50 px-4 lg:px-8 py-2">
+        <div class="max-w-7xl mx-auto flex items-center justify-center sm:justify-start gap-2 overflow-x-auto no-scrollbar">
+            <button onclick="switchTab('cases')" id="tab-btn-cases" class="tab-btn active flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all text-cyan-400 bg-cyan-950/60 border border-cyan-500/30">
+                <i class="fa-solid fa-user-nurse"></i> Simulação de Casos
+            </button>
+            <button onclick="switchTab('quiz')" id="tab-btn-quiz" class="tab-btn flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+                <i class="fa-solid fa-bolt text-amber-400"></i> Desafio de Plantão
+            </button>
+            <button onclick="switchTab('reference')" id="tab-btn-reference" class="tab-btn flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+                <i class="fa-solid fa-book-medical text-teal-400"></i> Guia Rápido & Protocolos
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8">
+
+        <!-- Banner Modo Professor (Condicional) -->
+        <div id="teacher-banner" class="hidden mb-6 p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 flex items-start gap-3">
+            <i class="fa-solid fa-chalkboard-user text-amber-400 text-xl mt-0.5"></i>
+            <div>
+                <h3 class="font-bold text-amber-300 text-sm">Modo Professor Ativado</h3>
+                <p class="text-xs text-slate-300 mt-0.5">Dicas pedagógicas, raciocínio clínico gabaritado e respostas completas estão visíveis imediatamente para facilitar a condução da aula.</p>
+            </div>
+        </div>
+
+        <!-- TAB 1: CASOS CLÍNICOS E SIMULAÇÃO -->
+        <section id="tab-cases" class="tab-content block space-y-6">
+            
+            <!-- Seleção de Paciente/Caso -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3" id="patient-selector">
+                <!-- Inserido dinamicamente via JS -->
+            </div>
+
+            <!-- Card Principal da Simulação -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Coluna Esquerda: Prontuário & Monitor (Lg: 5 colunas) -->
+                <div class="lg:col-span-5 space-y-6">
+                    
+                    <!-- Prontuário do Paciente -->
+                    <div class="glass-panel p-5 rounded-2xl space-y-4 relative overflow-hidden">
+                        <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                            <div class="flex items-center gap-3">
+                                <div id="patient-avatar" class="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center text-xl font-bold text-cyan-400 border border-slate-600">
+                                    P1
+                                </div>
+                                <div>
+                                    <h2 id="patient-name" class="font-bold text-slate-100 text-base">Carregando...</h2>
+                                    <p id="patient-demographics" class="text-xs text-slate-400">---</p>
+                                </div>
+                            </div>
+                            <span id="patient-badge-status" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-700 text-slate-300">
+                                Em triagem
+                            </span>
+                        </div>
+
+                        <!-- Queixa Principal -->
+                        <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-700/50">
+                            <span class="text-xs font-bold uppercase tracking-wider text-cyan-400 block mb-1">
+                                <i class="fa-solid fa-comment-medical mr-1"></i> Queixa Principal & Anamnese
+                            </span>
+                            <p id="patient-complaint" class="text-xs sm:text-sm text-slate-200 italic leading-relaxed">
+                                "..."
+                            </p>
+                        </div>
+
+                        <!-- Monitor Multiparamétrico Simulado -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono space-y-3 relative">
+                            <div class="flex items-center justify-between text-xs text-slate-500 border-b border-slate-800 pb-1.5">
+                                <span class="flex items-center gap-2">
+                                    <span class="relative flex h-2.5 w-2.5">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
+                                    </span>
+                                    <span class="tracking-wide">MONITOR DE SINAIS VITAIS</span>
+                                </span>
+                                <span>LEITO 02 - LEI</span>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <!-- FC -->
+                                <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800/80">
+                                    <div class="text-[10px] text-slate-400 flex justify-between">
+                                        <span>FC (bpm)</span>
+                                        <i class="fa-solid fa-heartbeat text-rose-500 animate-pulse"></i>
+                                    </div>
+                                    <div id="vitals-hr" class="text-2xl font-bold text-rose-400 mt-1">--</div>
+                                    <span class="text-[10px] text-slate-500">Ref: 60-100</span>
+                                </div>
+
+                                <!-- PA -->
+                                <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800/80">
+                                    <div class="text-[10px] text-slate-400 flex justify-between">
+                                        <span>PA (mmHg)</span>
+                                        <i class="fa-solid fa-gauge-high text-amber-400"></i>
+                                    </div>
+                                    <div id="vitals-bp" class="text-xl font-bold text-amber-300 mt-1">--/--</div>
+                                    <span class="text-[10px] text-slate-500">Ref: 120/80</span>
+                                </div>
+
+                                <!-- SpO2 -->
+                                <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800/80">
+                                    <div class="text-[10px] text-slate-400 flex justify-between">
+                                        <span>SpO₂ (%)</span>
+                                        <i class="fa-solid fa-wind text-cyan-400"></i>
+                                    </div>
+                                    <div id="vitals-spo2" class="text-2xl font-bold text-cyan-400 mt-1">--%</div>
+                                    <span class="text-[10px] text-slate-500">Ref: 95-100%</span>
+                                </div>
+
+                                <!-- FR -->
+                                <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800/80">
+                                    <div class="text-[10px] text-slate-400 flex justify-between">
+                                        <span>FR (ipm)</span>
+                                        <i class="fa-solid fa-lungs text-teal-400"></i>
+                                    </div>
+                                    <div id="vitals-rr" class="text-2xl font-bold text-teal-300 mt-1">--</div>
+                                    <span class="text-[10px] text-slate-500">Ref: 12-20</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800/80 flex items-center justify-between">
+                                <span class="text-xs text-slate-400">Temp: <strong id="vitals-temp" class="text-slate-200">-- °C</strong></span>
+                                <span class="text-xs text-slate-400">Glicemia: <strong id="vitals-gly" class="text-slate-200">-- mg/dL</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Exame Físico Pulmonar Resumido -->
+                        <div class="space-y-2">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">
+                                <i class="fa-solid fa-stethoscope text-cyan-400 mr-1"></i> Achados do Exame Físico
+                            </h4>
+                            <div id="physical-exam-findings" class="text-xs text-slate-300 space-y-1.5 bg-slate-900/40 p-3 rounded-xl border border-slate-800">
+                                <!-- Preenchido dinamicamente -->
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- Coluna Direita: Tomada de Decisão & Intervenções (Lg: 7 colunas) -->
+                <div class="lg:col-span-7 space-y-6">
+
+                    <!-- Etapa 1: Triagem & Hipótese Diagnóstica -->
+                    <div id="step-triage" class="glass-panel p-5 rounded-2xl space-y-5">
+                        <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                            <h3 class="font-bold text-base text-slate-100 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 text-xs flex items-center justify-center font-extrabold border border-cyan-500/40">1</span>
+                                Triagem de Manchester & Diagnóstico Sindrômico
+                            </h3>
+                            <span class="text-xs text-slate-400">Avaliação Inicial</span>
+                        </div>
+
+                       <!-- Manchester Color Select -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-2">
+                                Classificação de Risco (Protocolo de Manchester):
+                            </label>
+                            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                                <button onclick="selectManchester('red')" id="manchester-red" class="manchester-btn p-3 rounded-xl border border-rose-500/30 bg-rose-950/20 hover:bg-rose-900/40 text-rose-300 font-semibold text-xs flex flex-col items-center gap-1 transition-all">
+                                    <span class="w-3 h-3 rounded-full bg-rose-500 shadow-sm shadow-rose-500"></span>
+                                    VERMELHO
+                                    <span class="text-[10px] text-slate-400 font-normal">Emergência (0 min)</span>
+                                </button>
+                                <button onclick="selectManchester('orange')" id="manchester-orange" class="manchester-btn p-3 rounded-xl border border-amber-500/30 bg-amber-950/20 hover:bg-amber-900/40 text-amber-300 font-semibold text-xs flex flex-col items-center gap-1 transition-all">
+                                    <span class="w-3 h-3 rounded-full bg-amber-500 shadow-sm shadow-amber-500"></span>
+                                    LARANJA
+                                    <span class="text-[10px] text-slate-400 font-normal">Muito Urgente (10 min)</span>
+                                </button>
+                                <button onclick="selectManchester('yellow')" id="manchester-yellow" class="manchester-btn p-3 rounded-xl border border-yellow-500/30 bg-yellow-950/20 hover:bg-yellow-900/40 text-yellow-300 font-semibold text-xs flex flex-col items-center gap-1 transition-all">
+                                    <span class="w-3 h-3 rounded-full bg-yellow-400 shadow-sm shadow-yellow-400"></span>
+                                    AMARELO
+                                    <span class="text-[10px] text-slate-400 font-normal">Urgente (60 min)</span>
+                                </button>
+                                <button onclick="selectManchester('green')" id="manchester-green" class="manchester-btn p-3 rounded-xl border border-emerald-500/30 bg-emerald-950/20 hover:bg-emerald-900/40 text-emerald-300 font-semibold text-xs flex flex-col items-center gap-1 transition-all">
+                                    <span class="w-3 h-3 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500"></span>
+                                    VERDE
+                                    <span class="text-[10px] text-slate-400 font-normal">Pouco Urgente (120 min)</span>
+                                </button>
+                                <button onclick="selectManchester('blue')" id="manchester-blue" class="manchester-btn p-3 rounded-xl border border-sky-500/30 bg-sky-950/20 hover:bg-sky-900/40 text-sky-300 font-semibold text-xs flex flex-col items-center gap-1 transition-all">
+                                    <span class="w-3 h-3 rounded-full bg-sky-500 shadow-sm shadow-sky-500"></span>
+                                    AZUL
+                                    <span class="text-[10px] text-slate-400 font-normal">Não Urgente (240 min)</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Hipótese Diagnóstica Principal -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-2">
+                                Hipótese de Emergência Pulmonar Prioritária:
+                            </label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5" id="diagnosis-options">
+                                <!-- Preenchido dinamicamente pelo JS -->
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-2">
+                            <button id="confirm-triage-btn" onclick="confirmTriageStep()" class="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-slate-900 bg-gradient-to-r from-cyan-400 to-teal-300 hover:from-cyan-300 hover:to-teal-200 transition-all shadow-lg shadow-cyan-500/20">
+                                <i class="fa-solid fa-circle-check"></i> Confirmar Triagem e Diagnóstico
+                            </button>
+                        </div>
+
+                        <!-- FEEDBACK DA ETAPA 1 -->
+                        <div id="triage-feedback" class="hidden p-4 rounded-xl border space-y-3 transition-all duration-300">
+                            <!-- Preenchido via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Etapa 2: Plano de Cuidados de Enfermagem -->
+                    <div id="step-interventions" class="hidden glass-panel p-5 rounded-2xl space-y-5 transition-all duration-300 w-full">
+                        <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                            <h3 class="font-bold text-base text-slate-100 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 text-xs flex items-center justify-center font-extrabold border border-teal-500/40">2</span>
+                                Intervenções Imediatas de Enfermagem
+                            </h3>
+                            <span class="text-xs text-slate-400">Selecione TODAS as condutas indicadas</span>
+                        </div>
+
+                        <p class="text-xs text-slate-300">
+                            Com base na gravidade do quadro, assinale as ações prescritas ou de autonomia da enfermagem necessárias no atendimento inicial:
+                        </p>
+
+                        <div class="space-y-2.5" id="interventions-checklist">
+                            <!-- Inserido dinamicamente -->
+                        </div>
+
+                        <div class="flex justify-between items-center pt-3 border-t border-slate-700/60">
+                            <button onclick="resetCurrentCase()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all">
+                                <i class="fa-solid fa-rotate-left mr-1"></i> Reiniciar Caso
+                            </button>
+                            <button id="evaluate-interventions-btn" onclick="evaluateInterventions()" class="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-slate-900 bg-gradient-to-r from-teal-400 to-emerald-300 hover:from-teal-300 hover:to-emerald-200 transition-all shadow-lg shadow-teal-500/20">
+                                Executar Condutas & Avaliar <i class="fa-solid fa-check-double"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Feedback Final do Caso -->
+                    <div id="case-feedback" class="hidden glass-panel p-6 rounded-2xl space-y-4 border-2">
+                        <!-- Inserido via JS -->
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 2: DESAFIO DE PLANTÃO (QUIZ COM TEMPO) -->
+        <section id="tab-quiz" class="tab-content hidden max-w-3xl mx-auto space-y-6">
+            
+            <div class="glass-panel p-6 rounded-2xl text-center space-y-4 relative overflow-hidden">
+                <div class="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl"></div>
+                
+                <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                    <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-stopwatch"></i> Desafio de Plantão Rápido
+                    </span>
+                    <div class="flex items-center gap-2 bg-slate-900 px-3 py-1 rounded-full border border-slate-700">
+                        <i class="fa-solid fa-clock text-amber-400 text-xs"></i>
+                        <span id="quiz-timer" class="font-mono text-xs font-bold text-amber-300">90s</span>
+                    </div>
+                </div>
+
+                <!-- Pergunta -->
+                <div id="quiz-question-container" class="space-y-4 text-left py-2">
+                    <h3 id="quiz-question-text" class="text-base sm:text-lg font-bold text-slate-100 leading-snug">
+                        Carregando pergunta...
+                    </h3>
+                    <div id="quiz-options" class="space-y-2.5">
+                        <!-- Opções dinâmicas -->
+                    </div>
+                </div>
+
+                <!-- Feedback Rápido da Questão -->
+                <div id="quiz-feedback" class="hidden p-4 rounded-xl text-xs text-left space-y-2"></div>
+
+                <!-- Footer do Quiz -->
+                <div class="flex items-center justify-between pt-3 border-t border-slate-700/60 text-xs text-slate-400">
+                    <span>Questão <strong id="quiz-current-idx" class="text-slate-200">1</strong> de <strong id="quiz-total-idx" class="text-slate-200">10</strong></span>
+                    <button id="quiz-next-btn" onclick="nextQuizQuestion()" class="hidden px-4 py-2 rounded-xl font-bold text-xs bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition-all">
+                        Próxima Pergunta <i class="fa-solid fa-chevron-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+ <!-- TAB 3: GUIA RÁPIDO & PROTOCOLOS DE ENFERMAGEM (Alinhado com a aula da mamãe) -->
+        <section id="tab-reference" class="tab-content hidden space-y-6">
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <!-- Card 1: Edema Agudo & Enfisema -->
+                <div class="glass-panel p-5 rounded-2xl space-y-3">
+                    <div class="flex items-center gap-2.5 text-cyan-400 font-bold text-sm border-b border-slate-700/60 pb-2.5">
+                        <i class="fa-solid fa-lungs text-lg"></i> Edema Agudo de Pulmão & Enfisema
+                    </div>
+                    <div class="space-y-2.5 text-xs text-slate-300">
+                        <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+                            <strong class="text-cyan-300 block mb-0.5">Edema Agudo de Pulmão (EAP)</strong>
+                            <p class="text-slate-400">Ortopneia severa e expectoração rosada/espumosa. Condutas: Posição de Fowler 90º (pernas pendentes), VNI/CPAP, Furosemida IV e SVD para balanço hídrico.</p>
+                        </div>
+                        <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+                            <strong class="text-cyan-300 block mb-0.5">Enfisema Pulmonar (DPOC Exacerbado)</strong>
+                            <p class="text-slate-400">Retenção de CO₂ e tórax em tonel. Usar Máscara de Venturi (24%-28%) para manter SpO₂ entre 88% e 92%. NUNCA usar O₂ em alto fluxo descontrolado.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Drenagem Pleural em Pneumotórax & Hemotórax -->
+                <div class="glass-panel p-5 rounded-2xl space-y-3">
+                    <div class="flex items-center gap-2.5 text-teal-400 font-bold text-sm border-b border-slate-700/60 pb-2.5">
+                        <i class="fa-solid fa-vial-circle-check text-lg"></i> Drenagem Torácica Fechada
+                    </div>
+                    <ul class="space-y-2 text-xs text-slate-300 list-disc list-inside">
+                        <li><strong>Selo d'Água:</strong> Manter obrigatoriamente abaixo do nível do tórax com solução fisiológica estéril.</li>
+                        <li><strong>Hemotórax:</strong> Monitorar débito e aspecto sanguinolento. Notificar imediatamente se o débito for &gt; 200 ml/h.</li>
+                        <li><strong>Pneumotórax Hipertensivo:</strong> Auxiliar na punção de alívio imediata no 2º EIC antes da drenagem definitiva.</li>
+                        <li><strong>Transporte:</strong> NUNCA pinçar o dreno com escape aéreo ou sangue ativo.</li>
+                    </ul>
+                </div>
+
+                <!-- Card 3: Exame Físico Diferencial -->
+                <div class="glass-panel p-5 rounded-2xl space-y-3">
+                    <div class="flex items-center gap-2.5 text-amber-400 font-bold text-sm border-b border-slate-700/60 pb-2.5">
+                        <i class="fa-solid fa-stethoscope text-lg"></i> Exame Físico Pulmonar Diferencial
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 font-mono text-xs space-y-2">
+                        <div class="flex justify-between border-b border-slate-800 pb-1">
+                            <span class="text-amber-300 font-bold">Patologia</span>
+                            <span class="text-amber-300 font-bold">Percussão / Ausculta</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Derrame Pleural:</span>
+                            <span class="text-slate-200">Macicez / MV abolido</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Hemotórax:</span>
+                            <span class="text-slate-200">Macicez + Choque</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Pneumotórax:</span>
+                            <span class="text-slate-200">Hipertimpanismo</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Edema Agudo:</span>
+                            <span class="text-slate-200">Estertores crepitantes</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Enfisema:</span>
+                            <span class="text-slate-200">Hiperinsuflado / Tonel</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+<!-- MODAL DE CONCLUSÃO DO DESAFIO (QUIZ) -->
+        <div id="quiz-completion-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md hidden transition-all duration-300 p-4">
+            <div class="glass-panel max-w-md w-full p-6 rounded-lg border border-slate-700 bg-slate-900 text-center space-y-5 shadow-xl relative overflow-hidden">
+                <div class="w-14 h-14 rounded-lg bg-emerald-900/50 text-emerald-400 border border-emerald-700/60 flex items-center justify-center text-2xl font-extrabold mx-auto">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-extrabold text-slate-100">Desafio Concluído com Sucesso!</h3>
+                    <p class="text-xs text-slate-400 mt-1">Você finalizou todas as questões do plantão.</p>
+                </div>
+
+                <div class="bg-slate-950/70 p-4 rounded-lg border border-slate-800 space-y-1">
+                    <span class="text-xs uppercase tracking-wider font-semibold text-slate-400">Sua Pontuação Final</span>
+                    <div id="modal-final-score" class="text-3xl font-black text-amber-400 font-mono">0 pts</div>
+                </div>
+
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    Aproveite para revisar os protocolos e condutas essenciais no nosso Guia Rápido.
+                </p>
+
+                <div class="pt-2">
+                    <button onclick="goToReferenceTab()" class="w-full py-3 px-4 rounded-lg font-bold text-xs bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center justify-center gap-2 shadow-md transition-all">
+                        <i class="fa-solid fa-book-medical"></i> Ir para Guia Rápido & Protocolos
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL DE CONCLUSÃO DOS CASOS CLÍNICOS -->
+        <div id="cases-completion-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md hidden transition-all duration-300 p-4">
+            <div class="glass-panel max-w-md w-full p-6 rounded-lg border border-slate-700 bg-slate-900 text-center space-y-5 shadow-xl relative overflow-hidden">
+                <div class="w-14 h-14 rounded-lg bg-cyan-900/50 text-cyan-400 border border-cyan-700/60 flex items-center justify-center text-2xl font-extrabold mx-auto">
+                    <i class="fa-solid fa-user-nurse"></i>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-extrabold text-slate-100">Simulação de Casos Concluída!</h3>
+                    <p class="text-xs text-slate-400 mt-1">Você atendeu a todos os 5 pacientes de emergência com sucesso.</p>
+                </div>
+
+                <div class="bg-slate-950/70 p-4 rounded-lg border border-slate-800 space-y-1">
+                    <span class="text-xs uppercase tracking-wider font-semibold text-slate-400">Pontuação Total dos Casos</span>
+                    <div id="cases-final-score" class="text-3xl font-black text-amber-400 font-mono">0 pts</div>
+                </div>
+
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    Agora que você praticou o raciocínio clínico nos casos, teste sua agilidade no Desafio de Plantão.
+                </p>
+
+                <div class="pt-2">
+                    <button onclick="goToQuizTab()" class="w-full py-3 px-4 rounded-lg font-bold text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center justify-center gap-2 shadow-md transition-all">
+                        <i class="fa-solid fa-bolt"></i> Ir para o Desafio de Plantão
+                    </button>
+                </div>
+            </div>
+        </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+<footer class="bg-slate-900 border-t border-slate-800 py-3.5 px-4 text-center text-xs text-slate-500">
+    <p>
+        Desenvolvido por <span class="text-slate-400 font-medium">Luana Marques</span> para apoio didático em Urgência e Emergência 
+        <span class="mx-1 opacity-50">•</span> 
+        © 2026 PulmoCare
+    </p>
+</footer>
+
+    <!-- Arquivo JS Externo -->
+    <script src="js/script.js"></script>
+</body>
+</html>
